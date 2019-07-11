@@ -397,7 +397,12 @@ class Html
     {
         $parentStyle = self::parseInlineStyle($node, array());
         $style = array_merge($parentStyle, $style);
-        if ($node->parentNode != null && XML_ELEMENT_NODE == $node->parentNode->nodeType) {
+
+        if($node->parentNode == null || $node->parentNode->nodeName === 'td'){
+            return $style;
+        }
+
+        if (XML_ELEMENT_NODE == $node->parentNode->nodeType) {
             $style = self::recursiveParseStylesInHierarchy($node->parentNode, $style);
         }
 
@@ -602,15 +607,102 @@ class Html
                         $styles['unit'] = \PhpOffice\PhpWord\SimpleType\TblWidth::AUTO;
                     }
                     break;
+                case 'border-top':
+                    $styles = self::getBorderTopStyles($styles, $cValue);
+                    break;
+                case 'border-bottom':
+                    $styles = self::getBorderBottomStyles($styles, $cValue);
+                    break;
+                case 'border-left':
+                    $styles = self::getBorderLeftStyles($styles, $cValue);
+                    break;
+                case 'border-right':
+                    $styles = self::getBorderRightStyles($styles, $cValue);
+                    break;
                 case 'border':
-                    if (preg_match('/([0-9]+[^0-9]*)\s+(\#[a-fA-F0-9]+)\s+([a-z]+)/', $cValue, $matches)) {
-                        $styles['borderSize'] = Converter::cssToPoint($matches[1]);
-                        $styles['borderColor'] = trim($matches[2], '#');
-                        $styles['borderStyle'] = self::mapBorderStyle($matches[3]);
-                    }
+                    $styles = self::getBorderStyles($styles, $cValue);
                     break;
             }
         }
+
+        return $styles;
+    }
+
+    /**
+     * Parse border style by reg exp
+     *
+     * @param $cValue
+     *
+     * @return array
+     */
+    private static function parseBorderStyle($cValue)
+    {
+        $styles = [];
+
+        if (preg_match('/([0-9]+[^0-9]*)\s+([a-z]+)\s+(\#[a-fA-F0-9]+)/', $cValue, $matches)) {
+            $styles['size'] = Converter::cssToPoint($matches[1]);
+            $styles['style'] = self::mapBorderStyle($matches[2]);
+            $styles['color'] = trim($matches[3], '#');
+        }else{
+            $styles['size'] = 1;
+            $styles['style'] = 'single';
+            $styles['color'] = '000000';
+        }
+
+        return $styles;
+    }
+
+    private static function getBorderStyles($styles, $cValue)
+    {
+        $borderStyles = self::parseBorderStyle($cValue);
+
+        $styles['borderSize'] = $borderStyles['size'];
+        $styles['borderStyle'] = $borderStyles['style'];
+        $styles['borderColor'] = $borderStyles['color'];
+
+        return $styles;
+    }
+
+    private static function getBorderTopStyles($styles, $cValue)
+    {
+        $borderStyles = self::parseBorderStyle($cValue);
+
+        $styles['borderTopSize'] = $borderStyles['size'];
+        $styles['borderTopStyle'] = $borderStyles['style'];
+        $styles['borderColor'] = $borderStyles['color'];
+
+        return $styles;
+    }
+
+    private static function getBorderBottomStyles($styles, $cValue)
+    {
+        $borderStyles = self::parseBorderStyle($cValue);
+
+        $styles['borderBottomSize'] = $borderStyles['size'];
+        $styles['borderBottomStyle'] = $borderStyles['style'];
+        $styles['borderColor'] = $borderStyles['color'];
+
+        return $styles;
+    }
+
+    private static function getBorderLeftStyles($styles, $cValue)
+    {
+        $borderStyles = self::parseBorderStyle($cValue);
+
+        $styles['borderLeftSize'] = $borderStyles['size'];
+        $styles['borderLeftStyle'] = $borderStyles['style'];
+        $styles['borderColor'] = $borderStyles['color'];
+
+        return $styles;
+    }
+
+    private static function getBorderRightStyles($styles, $cValue)
+    {
+        $borderStyles = self::parseBorderStyle($cValue);
+
+        $styles['borderRightSize'] = $borderStyles['size'];
+        $styles['borderRightStyle'] = $borderStyles['style'];
+        $styles['borderColor'] = $borderStyles['color'];
 
         return $styles;
     }
